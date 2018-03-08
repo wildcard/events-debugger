@@ -62,5 +62,9 @@ Observing errors in node server(TCP) I guess the connection is open too long..
 error didn't happed again until now.
 started building react Components for the persisting the events
 
+> 2018-03-08 23:00
+
+last line of code for the day - push to github
+
 Comments
 --------
