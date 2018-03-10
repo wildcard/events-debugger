@@ -2,31 +2,31 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 class EventSourceHOC extends React.Component {
-
   state = {
     events: []
   }
 
-  appendMessage = () => {
-    
+  appendMessage = (message) => {
+    this.setState(({ events }) => {
+      return {
+        events: events.concat(message.data)
+      }
+    });
+  }
+
+  handleEventSourceError = () => {
+    throw new Error('Event source error');
+
+    if (this.props.onEventSourceError) {
+      this.props.onEventSourceError();
+    }
   }
 
   componentDidMount() {
-    this.source = new EventSource(this.props.url);
-    const cb = message => {
-      this.setState(prevState => {
-        let newEvents = prevState.events.concat(message.data)
-        return {
-          events: newEvents
-        }
-      });
-    };
-    this.props.types.forEach(type => {
-      this.source.onmessage(cb, false);
-    });
-    if (this.props.onEventSourceError) {
-      this.source.onerror = this.props.onEventSourceError;
-    }
+    this.source = new EventSource(props.url);
+
+    this.source.onmessage(this.appendMessage, false);
+    this.source.onerror = this.handleEventSourceError;
   }
   componentWillUnmount() {
     this.source.close();

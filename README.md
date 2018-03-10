@@ -66,5 +66,11 @@ started building react Components for the persisting the events
 
 last line of code for the day - push to github
 
+> 2018-03-09 22:30 - start state management with redux + immutable js
+
+add fixes to koa, make it more resilient
+
+> 2018-03-09 09:00 - end - WIP UI with evergreen-ui
+
 Comments
 --------

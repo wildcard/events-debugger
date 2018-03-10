@@ -1,14 +1,49 @@
-redis:
-  image: redis
-  ports:
-    - "6379:6379"
+version: "3.3"
 
-stream:
-  image: segment/fake-event-stream
-  environment:
-    - REDIS_HOST=redis
-    - REDIS_PORT=6379
-    - REDIS_CHANNEL=events
-    - EVENTS_PER_SECOND=100
-  links:
-    - redis
+services:
+  sentry-redis:
+     image: redis
+
+  sentry-postgres:
+    image: postgres
+    environment:
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_USER=sentry
+
+  sentry-base: &sentry
+    image: sentry
+    environment:
+      - SENTRY_SECRET_KEY='j^3f_rz=ef%#*vql_iud(9ktu2dv0463reixxw#-tyt51*n&*2'
+    links:
+      - sentry-postgres:postgres
+      - sentry-redis:redis
+
+  sentry-cron:
+    <<: *sentry
+    
+  sentry-worker-1:
+    <<: *sentry
+
+  sentry:
+    <<: *sentry
+    links:
+      - sentry-postgres:postgres
+      - sentry-redis:redis
+      - sentry-cron
+      - sentry-worker-1
+    ports:
+      - "8080:9000"
+
+  redis:
+    image: redis
+    ports:
+      - "6379:6379"
+  stream:
+    image: segment/fake-event-stream
+    environment:
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379
+      - REDIS_CHANNEL=events
+      - EVENTS_PER_SECOND=100
+    links:
+      - redis
