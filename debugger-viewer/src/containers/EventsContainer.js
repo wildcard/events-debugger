@@ -1,11 +1,12 @@
 import React, { Component } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
-// import { addToCart } from '../actions'
+import { pauseEvents, resumeEvents } from '../actions'
 import { getVisibleEvents } from '../reducers/events'
 import EventItem from '../components/EventItem'
 import EventsList from '../components/EventsList'
 import { InfiniteLoader, List, AutoSizer } from 'react-virtualized';
+import { Button } from 'evergreen-ui'
 
 const STATUS_LOADING = 1;
 const STATUS_LOADED = 2;
@@ -93,6 +94,10 @@ class EventsContainer extends Component {
     });
   }
 
+  handlePauseEvents = () => {
+
+  }
+
   render() {
     const rowCount = this.props.events.size;
     const {loadedRowCount, loadingRowCount} = this.state;
@@ -101,7 +106,7 @@ class EventsContainer extends Component {
       <div>
               {loadingRowCount} loading, {loadedRowCount} loaded
             </div>
-
+            <div>{this.props.status} <Button onClick={this.props.pauseEvents}>PAUSE</Button></div>
       <InfiniteLoader
       isRowLoaded={this.isRowLoaded}
       loadMoreRows={this.loadMoreRows}
@@ -115,7 +120,7 @@ class EventsContainer extends Component {
           onRowsRendered={onRowsRendered}
           ref={registerChild}
           rowCount={rowCount}
-          rowHeight={20}
+          rowHeight={56}
           rowRenderer={this.rowRenderer}
           width={width}
         />)}
@@ -138,20 +143,21 @@ class EventsContainer extends Component {
 // )
 
 EventsContainer.propTypes = {
-  events: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    data: PropTypes.object.isRequired,
-  })).isRequired,
+  // events: PropTypes.arrayOf(PropTypes.shape({
+  //   id: PropTypes.string.isRequired,
+  //   data: PropTypes.object.isRequired,
+  // })).isRequired,
   isPaused: PropTypes.bool.isRequired
 }
 
 const mapStateToProps = state => ({
   // events: getVisibleEvents(state.events)
   events: state.events.list,
-
+  status: state.events.status,
+  isPaused: state.events.isPaused,
 })
 
 export default connect(
   mapStateToProps,
-  { /*addToCart*/ }
+  { pauseEvents, resumeEvents }
 )(EventsContainer)

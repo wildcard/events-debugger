@@ -14,10 +14,29 @@ const parseEventMessage = message => {
   };
 }
 
-const receiveEvent = eventMessage => ({
-  type: types.RECEIVE_EVENT,
-  event: parseEventMessage(eventMessage)
+const receiveEventWhilePaused = event => ({
+  type: types.RECEIVED_PENDING_EVENT,
+  event,
 })
+
+const appendPendingEvents = pendingEvents => ({
+  type: types.MERGE_PENDING_EVENTS,
+  pendingEvents
+})
+
+const receiveEvent = eventMessage => (dispatch, getState) => {
+  const { isPaused } = getState();
+  const event = parseEventMessage(eventMessage);
+
+  if (isPaused) {
+    dispatch(receiveEventWhilePaused(event));
+  } else {
+    dispatch({
+      type: types.RECEIVE_EVENT,
+      event,
+    });
+  }
+}
 
 const errorReceivingEvent = () => ({
   type: types.ERROR_RECEIVING_EVENT
@@ -30,3 +49,11 @@ export const listenForEvents = (events) => dispatch => {
     dispatch(errorReceivingEvent())
   })
 }
+
+export const pauseEvents = () => ({
+  type: types.PAUSE_EVENTS,
+});
+
+export const resumeEvents = () => ({
+  type: types.RESUME_EVENTS,
+});

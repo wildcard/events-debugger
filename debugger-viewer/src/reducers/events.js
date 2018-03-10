@@ -3,6 +3,8 @@ import { List } from 'immutable'
 import {
   START_LISTENING_FOR_EVENTS,
   RECEIVE_EVENT,
+  RECEIVED_PENDING_EVENT,
+  MERGE_PENDING_EVENTS,
   PAUSE_EVENTS,
   RESUME_EVENTS,
   TOGGLE_EVENT_SELECTION,
@@ -25,6 +27,21 @@ const list = (state = List(), action) => {
   switch (action.type) {
     case RECEIVE_EVENT:
       return state.unshift(action.event);
+    case MERGE_PENDING_EVENTS:
+      return action.pendingEvents.isList() ?
+        action.pendingEvents.concat(state) : state;
+    default:
+      return state
+  }
+}
+
+const pending = (state = List(), action) => {
+  switch (action.type) {
+    case RECEIVED_PENDING_EVENT:
+      return state.unshift(action.event);
+    case RECEIVE_EVENT:
+    case MERGE_PENDING_EVENTS:
+      return List();
     default:
       return state
   }
@@ -51,17 +68,17 @@ const map = (state = {}, action) => {
   }
 }
 
-const visibleIds = (state = [], action) => {
-  switch (action.type) {
-    case RECEIVE_EVENT:
-      return [
-        ...state,
-        action.event.id
-      ]
-    default:
-      return state
-  }
-}
+// const visibleIds = (state = [], action) => {
+//   switch (action.type) {
+//     case RECEIVE_EVENT:
+//       return [
+//         ...state,
+//         action.event.id
+//       ]
+//     default:
+//       return state
+//   }
+// }
 
 const status = (state = 'INIT', action) => {
   switch (action.type) {
@@ -80,12 +97,25 @@ const status = (state = 'INIT', action) => {
   }
 }
 
+const isPaused = (state = false, action) => {
+  switch (action.type) {
+    case PAUSE_EVENTS:
+       return true;
+     case RESUME_EVENTS:
+       return false;
+    default:
+      return state;
+  }
+};
+
 export default combineReducers({
-  status,
-  list,
-  // map,
-  // visibleIds
-})
+    status,
+    list,
+    pending,
+    // map,
+    // visibleIds
+    isPaused,
+  });
 
 export const getEvent = (state, id) => (
   state.map[id]

@@ -27,10 +27,12 @@ const EventItem = ({ type, ...other }) => {
         borderBottom: 'extraMuted',
         display: 'flex',
         float: 'left',
-        height: 104,
+        height: 56,
         justifyContent: 'center',
         margin: 32,
-        width: 160,
+        width: '100%',
+        paddingLeft: 32,
+        paddingRight: 16,
       }}
     >
       <div>V</div>
@@ -38,6 +40,7 @@ const EventItem = ({ type, ...other }) => {
       <span>
         <EventName event={other} />
       </span>
+      <time></time>
     </Pane>
   );
 };
@@ -45,7 +48,6 @@ const EventItem = ({ type, ...other }) => {
 EventItem.propTypes = {
     id: PropTypes.string.isRequired,
     type: PropTypes.string.isRequired,
-    data: PropTypes.object.isRequired,
 };
 
 export default EventItem;

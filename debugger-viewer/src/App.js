@@ -30,6 +30,8 @@ const store = createStore(
 const events = new Events(EVENT_SOURCE_URL);
 store.dispatch(listenForEvents(events));
 
+setTimeout(() => { events.close(); }, 10000);
+
 class App extends Component {
   componentWillUnmount() {
     events.close();
