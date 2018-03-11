@@ -70,9 +70,11 @@ last line of code for the day - push to github
 
 add fixes to koa, make it more resilient
 
-> 2018-03-09 09:00 - end - WIP UI with evergreen-ui
+> 2018-03-10 09:00 - end - WIP UI with evergreen-ui
 
-> 2018-03-09 21:00
+> 2018-03-10 21:00 - experiment with rx for back pressure solution
+
+> 2018-03-11 02:00 - working rx solution - needs bulletproofing 
 
 Comments
 --------
