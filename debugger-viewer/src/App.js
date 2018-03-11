@@ -5,7 +5,7 @@ import { Provider } from 'react-redux'
 import { createLogger } from 'redux-logger'
 import reducer from './reducers'
 import thunk from 'redux-thunk'
-import { listenForEvents } from './actions'
+import { listenForEvents, streamEventsBuffer } from './actions'
 import Events from './api/events'
 import EventsList from './containers/EventsContainer'
 import logo from './logo.svg';
@@ -28,9 +28,9 @@ const store = createStore(
 )
 
 const events = new Events(EVENT_SOURCE_URL);
-store.dispatch(listenForEvents(events));
+store.dispatch(streamEventsBuffer(events));
 
-setTimeout(() => { events.close(); }, 10000);
+// setTimeout(() => { events.close(); }, 10000);
 
 class App extends Component {
   componentWillUnmount() {

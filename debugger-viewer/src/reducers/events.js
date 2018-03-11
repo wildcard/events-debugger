@@ -3,7 +3,9 @@ import { List } from 'immutable'
 import {
   START_LISTENING_FOR_EVENTS,
   RECEIVE_EVENT,
+  RECEIVE_EVENTS,
   RECEIVED_PENDING_EVENT,
+  RECEIVED_PENDING_EVENTS,
   MERGE_PENDING_EVENTS,
   PAUSE_EVENTS,
   RESUME_EVENTS,
@@ -27,6 +29,8 @@ const list = (state = List(), action) => {
   switch (action.type) {
     case RECEIVE_EVENT:
       return state.unshift(action.event);
+    case RECEIVE_EVENTS:
+        return state.unshift(...action.events);
     case MERGE_PENDING_EVENTS:
       return action.pendingEvents.isList() ?
         action.pendingEvents.concat(state) : state;
@@ -39,7 +43,10 @@ const pending = (state = List(), action) => {
   switch (action.type) {
     case RECEIVED_PENDING_EVENT:
       return state.unshift(action.event);
+    case RECEIVED_PENDING_EVENTS:
+      return state.unshift(...action.events);
     case RECEIVE_EVENT:
+    case RECEIVE_EVENTS:
     case MERGE_PENDING_EVENTS:
       return List();
     default:
@@ -47,26 +54,26 @@ const pending = (state = List(), action) => {
   }
 }
 
-const map = (state = {}, action) => {
-  switch (action.type) {
-    case RECEIVE_EVENT:
-      return {
-        ...state,
-        [action.event.id]: action.event,
-      };
-    default:
-      const { eventId } = action
-
-      if (eventId) {
-        return {
-          ...state,
-          [eventId]: selectEvent(state[eventId], action)
-        }
-      }
-
-      return state;
-  }
-}
+// const map = (state = {}, action) => {
+//   switch (action.type) {
+//     case RECEIVE_EVENT:
+//       return {
+//         ...state,
+//         [action.event.id]: action.event,
+//       };
+//     default:
+//       const { eventId } = action
+//
+//       if (eventId) {
+//         return {
+//           ...state,
+//           [eventId]: selectEvent(state[eventId], action)
+//         }
+//       }
+//
+//       return state;
+//   }
+// }
 
 // const visibleIds = (state = [], action) => {
 //   switch (action.type) {
@@ -117,14 +124,14 @@ export default combineReducers({
     isPaused,
   });
 
-export const getEvent = (state, id) => (
-  state.map[id]
-)
+// export const getEvent = (state, id) => (
+//   state.map[id]
+// )
+//
+// export const getVisibleEvents = state => (
+//   state.visibleIds.map(id => getEvent(state, id))
+// )
 
-export const getVisibleEvents = state => (
-  state.visibleIds.map(id => getEvent(state, id))
-)
-
-export const isOpertional = state => (
-  ['RECEIVING', 'RESUMED'].includes(state)
-)
+// export const isOpertional = state => (
+//   ['RECEIVING', 'RESUMED'].includes(state)
+// )

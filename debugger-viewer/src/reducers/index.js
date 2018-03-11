@@ -5,4 +5,4 @@ export default combineReducers({
   events
 })
 
-const getEvent = (state, id) => fromEvents.getEvent(state.events, id)
+// const getEvent = (state, id) => fromEvents.getEvent(state.events, id)
