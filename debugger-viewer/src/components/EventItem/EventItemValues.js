@@ -1,0 +1,48 @@
+import React from 'react';
+import styled from 'styled-components';
+import moment from 'moment';
+
+export const EventType = styled.span`
+  font-size: 12px;
+  font-weight: 400;
+  line-height: 16px;
+  letter-spacing: 0;
+  min-width: 56px;
+  text-transform: uppercase;
+`;
+
+const EventNameText = styled.span`
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 460px;
+  text-align: left;
+`
+
+const PageEvent = ({ event }) => (<EventNameText title={event.properties.title}>
+  {event.properties.title}
+</EventNameText>);
+
+const IdentifyEvent = ({ event }) => (
+  <EventNameText title={`${event.userId} (${event.traits.email})`}>
+    {event.userId} ({event.traits.email})
+  </EventNameText>
+);
+const TrackEvent = ({ event }) => (<EventNameText title={event.event}>
+  {event.event}
+</EventNameText>);
+
+const typesMap = {
+  page: PageEvent,
+  track: TrackEvent,
+  identify: IdentifyEvent,
+};
+
+export const EventName = ({ type, event }) => {
+  const Component = typesMap[type];
+  return <Component event={event}/>;
+};
+
+export const EventTime = ({ time }) => (<time title={time}>
+  {time ? moment(time).format('Y/MM/DD HH:mm:ss') : null}
+  </time>);

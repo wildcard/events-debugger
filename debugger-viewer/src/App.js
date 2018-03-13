@@ -8,7 +8,7 @@ import thunk from 'redux-thunk'
 import { listenForEvents, streamEventsBuffer } from './actions'
 import Events from './api/events'
 import EventsList from './containers/EventsContainer'
-import logo from './logo.svg';
+import EventsToolBar from './containers/EventsToolbarContainer'
 import './App.css';
 import 'react-virtualized/styles.css'; // only needs to be imported once
 
@@ -30,7 +30,7 @@ const store = createStore(
 const events = new Events(EVENT_SOURCE_URL);
 store.dispatch(streamEventsBuffer(events));
 
-// setTimeout(() => { events.close(); }, 10000);
+setTimeout(() => { events.close(); }, 10000);
 
 class App extends Component {
   componentWillUnmount() {
@@ -40,12 +40,8 @@ class App extends Component {
   render() {
     return (
       <Provider store={store}>
-        <div className="App">
-          <header className="App-header">
-            <img src={logo} className="App-logo" alt="logo" />
-            <h1 className="App-title">Welcome to React</h1>
-          </header>
-
+        <div>
+          <EventsToolBar/>
           <EventsList />
         </div>
       </Provider>

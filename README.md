@@ -74,7 +74,11 @@ add fixes to koa, make it more resilient
 
 > 2018-03-10 21:00 - experiment with rx for back pressure solution
 
-> 2018-03-11 02:00 - working rx solution - needs bulletproofing 
+> 2018-03-11 02:00 - working rx solution - needs bulletproofing
+
+> 2018-03-13 00:40 - 2018-03-13 02:40 - style, considering web workers
+
+> 2018-03-13 20:30 - 2018-03-14 01:35 - styling
 
 Comments
 --------

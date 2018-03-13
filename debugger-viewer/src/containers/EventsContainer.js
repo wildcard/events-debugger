@@ -7,6 +7,7 @@ import EventItem from '../components/EventItem'
 import EventsList from '../components/EventsList'
 import { InfiniteLoader, List, AutoSizer } from 'react-virtualized';
 import { Button } from 'evergreen-ui'
+import { TOOLBAR_HEIGHT } from '../variables';
 
 const STATUS_LOADING = 1;
 const STATUS_LOADED = 2;
@@ -78,11 +79,9 @@ class EventsContainer extends Component {
     const {loadedRowsMap} = this.state;
 
     return (
-      <div key={key} style={style}>
-        {loadedRowsMap[index] === STATUS_LOADED ?
-          <EventItem key={event.id} {...event} /> :
-          <div>Not loaded</div>}
-      </div>
+      loadedRowsMap[index] === STATUS_LOADED ?
+        <EventItem key={key} {...event} style={style}/> :
+        <div key={key} style={style}>Not loaded</div>
     )
   }
 
@@ -98,15 +97,20 @@ class EventsContainer extends Component {
 
   }
 
-  render() {
-    const rowCount = this.props.events.size;
+  renderMeta () {
     const {loadedRowCount, loadingRowCount} = this.state;
 
+    return (<div><div>
+            {loadingRowCount} loading, {loadedRowCount} loaded
+          </div>
+          <div>{this.props.status} <Button onClick={this.props.pauseEvents}>PAUSE</Button>
+        </div></div>);
+  }
+
+  render() {
+    const rowCount = this.props.events.size;
+
     return (<div>
-      <div>
-              {loadingRowCount} loading, {loadedRowCount} loaded
-            </div>
-            <div>{this.props.status} <Button onClick={this.props.pauseEvents}>PAUSE</Button></div>
       <InfiniteLoader
       isRowLoaded={this.isRowLoaded}
       loadMoreRows={this.loadMoreRows}
@@ -116,7 +120,7 @@ class EventsContainer extends Component {
         <AutoSizer disableHeight>
               {({width}) => (
         <List
-          height={450}
+          height={window.innerHeight - TOOLBAR_HEIGHT}
           onRowsRendered={onRowsRendered}
           ref={registerChild}
           rowCount={rowCount}
