@@ -17,6 +17,7 @@ const EventNameText = styled.span`
   text-overflow: ellipsis;
   max-width: 460px;
   text-align: left;
+  font-weight: 500;
 `
 
 const PageEvent = ({ event }) => (<EventNameText title={event.properties.title}>

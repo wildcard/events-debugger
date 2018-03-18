@@ -80,5 +80,13 @@ add fixes to koa, make it more resilient
 
 > 2018-03-13 20:30 - 2018-03-14 01:35 - styling
 
+> 2018-03-17 16:30 - 21:00 - trying to make animation work (trigger only from top and on first render)
+
+> 2018-03-17 23:30 - 2018-03-18 05:30 - finish up pause + search
+
+> 2018-03-18 05:30 - 2018-03-18 06:40 - merge paused events + reselect
+
+> 2018-03-18 06:40 - 08:00 - experiment with lunr + web worker
+
 Comments
 --------

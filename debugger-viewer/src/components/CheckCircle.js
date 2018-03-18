@@ -1,5 +1,5 @@
 import React from 'react'
-const CheckCircle = (style, ...other) => (
+const CheckCircle = ({ style, ...other }) => (
   <div style={{ width: '16px', height: '17px', ...style }} {...other}>
     <svg width="100%" height="100%" viewBox="0 0 16 17" xmlns="http://www.w3.org/2000/svg" fill="#016cd1">
       <title>Allowed event</title>

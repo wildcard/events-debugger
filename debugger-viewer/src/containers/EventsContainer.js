@@ -1,18 +1,21 @@
-import React, { Component } from 'react'
+import React, { PureComponent } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
-import { pauseEvents, resumeEvents } from '../actions'
+import { createSelector } from 'reselect'
+import { prependPendingEvents } from '../actions'
 import { getVisibleEvents } from '../reducers/events'
 import EventItem from '../components/EventItem'
 import EventsList from '../components/EventsList'
 import { InfiniteLoader, List, AutoSizer } from 'react-virtualized';
-import { Button } from 'evergreen-ui'
+import { Overlay, Spinner } from 'evergreen-ui';
 import { TOOLBAR_HEIGHT } from '../variables';
+import { backgroundColor } from '../pallete'
 
 const STATUS_LOADING = 1;
 const STATUS_LOADED = 2;
+const STATUS_RENDERED = 3;
 
-class EventsContainer extends Component {
+class EventsContainer extends PureComponent {
   constructor(props) {
     super(props);
 
@@ -22,6 +25,7 @@ class EventsContainer extends Component {
   state = {
     loadedRowCount: 0,
     loadedRowsMap: {},
+    renderedRowsMap: {},
     loadingRowCount: 0,
   }
 
@@ -33,14 +37,14 @@ class EventsContainer extends Component {
 
   isRowLoaded = ({ index }) => {
     const {loadedRowsMap} = this.state;
-   return !!loadedRowsMap[index]; // STATUS_LOADING or STATUS_LOADED
+   return Boolean(loadedRowsMap[index]); // STATUS_LOADING or STATUS_LOADED
   }
 
   loadMoreRows = ({ startIndex, stopIndex }) => {
     const {loadedRowsMap, loadingRowCount} = this.state;
     const increment = stopIndex - startIndex + 1;
 
-    for (var i = startIndex; i <= stopIndex; i++) {
+    for (let i = startIndex; i <= stopIndex; i++) {
       loadedRowsMap[i] = STATUS_LOADING;
     }
 
@@ -53,7 +57,7 @@ class EventsContainer extends Component {
 
       delete this.timeoutIdMap[timeoutId];
 
-      for (var i = startIndex; i <= stopIndex; i++) {
+      for (let i = startIndex; i <= stopIndex; i++) {
         loadedRowsMap[i] = STATUS_LOADED;
       }
 
@@ -74,13 +78,17 @@ class EventsContainer extends Component {
     });
   }
 
-  rowRenderer = ({ key, index, style}) => {
+  rowRenderer = ({ key, index, style, isScrolling, isVisible}) => {
     const event = this.props.events.get(index);
-    const {loadedRowsMap} = this.state;
-
+    const { id } = event;
+    const {loadedRowsMap, renderedRowsMap} = this.state;
+    const isAlreayRendered = renderedRowsMap[id];
     return (
+      isScrolling ? <div key={key} style={style}>... is Scrolling</div> :
       loadedRowsMap[index] === STATUS_LOADED ?
-        <EventItem key={key} {...event} style={style}/> :
+        <EventItem key={key}
+          animate={!isScrolling && index < 5}
+          event={event} style={style}/> :
         <div key={key} style={style}>Not loaded</div>
     )
   }
@@ -93,75 +101,114 @@ class EventsContainer extends Component {
     });
   }
 
-  handlePauseEvents = () => {
+  handleRowRendered = onRowsRendered => (args) => {
+    const { overscanStartIndex, overscanStopIndex, startIndex, stopIndex } = args;
+    const {renderedRowsMap} = this.state;
+    // console.log(overscanStartIndex, overscanStopIndex, startIndex, stopIndex);
+    const events = this.props.events.slice(startIndex, stopIndex);
 
+    events.forEach(event => {
+      const { id } = event;
+      const renderCount = renderedRowsMap[id];
+      renderedRowsMap[id] = renderCount ? renderCount + 1 : 1;
+    });
+
+    onRowsRendered(args);
   }
 
   renderMeta () {
     const {loadedRowCount, loadingRowCount} = this.state;
-
-    return (<div><div>
-            {loadingRowCount} loading, {loadedRowCount} loaded
-          </div>
-          <div>{this.props.status} <Button onClick={this.props.pauseEvents}>PAUSE</Button>
-        </div></div>);
+    const rowCount = this.props.events.size;
+    // console.log(this.props.filteredEvents);
+    return (<div>
+        <div>{loadingRowCount} loading, {loadedRowCount} loaded of {rowCount}</div>
+          {this.props.status}
+          </div>);
   }
 
   render() {
     const rowCount = this.props.events.size;
 
     return (<div>
+      {this.renderMeta()}
+
+      {this.props.isLoading ? <Overlay isShown
+        containerProps={{
+          display:"flex",
+          justifyContent:"center",
+          alignItems:"center",
+        }}>
+        <Spinner />
+      </Overlay> : null }
+
+      {this.props.pendingCount ? <div>
+        Pending events {this.props.pendingCount}
+        <button onClick={this.props.prependPendingEvents}>Click to add</button>
+    </div> : null}
+
       <InfiniteLoader
-      isRowLoaded={this.isRowLoaded}
-      loadMoreRows={this.loadMoreRows}
-      rowCount={rowCount}
-    >
-      {({ onRowsRendered, registerChild }) => (
+    isRowLoaded={this.isRowLoaded}
+    loadMoreRows={this.loadMoreRows}
+    rowCount={rowCount}
+  >
+    {({ onRowsRendered, registerChild }) => (
         <AutoSizer disableHeight>
               {({width}) => (
         <List
           height={window.innerHeight - TOOLBAR_HEIGHT}
-          onRowsRendered={onRowsRendered}
+          onRowsRendered={this.handleRowRendered(onRowsRendered)}
           ref={registerChild}
           rowCount={rowCount}
           rowHeight={56}
           rowRenderer={this.rowRenderer}
           width={width}
+          style={{ backgroundColor }}
         />)}
-          </AutoSizer>
-      )}
-    </InfiniteLoader>
+      </AutoSizer>
+    )}
+      </InfiniteLoader>
     </div>);
   }
 }
 
-// const EventsContainer = ({ events }) => (
-//
-//   <EventsList title="Events">
-//     {events.map(event =>
-//       <EventItem
-//         key={event.id}
-//         event={event} />
-//     )}
-//   </EventsList>
-// )
-
 EventsContainer.propTypes = {
-  // events: PropTypes.arrayOf(PropTypes.shape({
-  //   id: PropTypes.string.isRequired,
-  //   data: PropTypes.object.isRequired,
-  // })).isRequired,
+  events: PropTypes.arrayOf(PropTypes.shape({
+    id: PropTypes.string.isRequired,
+    data: PropTypes.object.isRequired,
+  })).isRequired,
   isPaused: PropTypes.bool.isRequired
 }
 
+// const get
+
+const getEventsList = (state) => state.events.list;
+const getVisibleEventIds = (state) => state.events.visibleEventIds;
+const getEventsMap = (state) => state.events.map;
+const getSearchInput = (state) => state.events.searchInput;
+
+const getFilteredEvents = createSelector(
+  [
+    getEventsList,
+    getVisibleEventIds,
+    getEventsMap,
+    getSearchInput,
+  ],
+  (list, visibleEventIds, map, searchInput) => (
+    !searchInput ?
+      list :
+      getVisibleEvents(visibleEventIds, map)
+    )
+  );
+
 const mapStateToProps = state => ({
-  // events: getVisibleEvents(state.events)
-  events: state.events.list,
+  pendingCount: state.events.pending.size,
+  events: getFilteredEvents(state),
   status: state.events.status,
   isPaused: state.events.isPaused,
+  isLoading: state.events.isLoading,
 })
 
 export default connect(
   mapStateToProps,
-  { pauseEvents, resumeEvents }
+  { prependPendingEvents }
 )(EventsContainer)
