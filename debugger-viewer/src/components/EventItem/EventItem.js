@@ -1,10 +1,8 @@
 import React, { Fragment, PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { Pane } from 'evergreen-ui';
-import CheckCircle from '../CheckCircle'
-import styled, { keyframes } from 'styled-components';
-import ContentLoader from "react-content-loader"
-
+import CheckCircle from '../CheckCircle';
+import styled from 'styled-components';
 import {
   EventItemStatusColumn,
   EventItemTypeColumn,
@@ -16,24 +14,8 @@ import {
   EventName,
   EventTime
 } from './EventItemValues';
-import './EventItem.css'
-
-const EventItemStencil = (props) => (
-	<ContentLoader
-		height={56}
-		width={540}
-		speed={4}
-		primaryColor={"#778999"}
-		secondaryColor={"#9cb1c3"}
-    className="event__stencil"
-    {...props}
-	>
-		<rect x={69} y="20" rx="8" ry="8" width="56" height="16" />
-		<rect x={149} y="20" rx="8" ry="8" width="200" height="16" />
-		<rect x={383} y="20" rx="8" ry="8" width="144" height="16" />
-		<circle cx={27} cy="28" r="10" />
-	</ContentLoader>
-)
+import EventItemStencil from './EventItemStencil';
+import './EventItem.css';
 
 class EventItem extends PureComponent {
   constructor(props) {
@@ -61,10 +43,11 @@ class EventItem extends PureComponent {
       stencil,
       order,
     } = this.props;
+
     const {
       type,
       receivedAt,
-    } = event;
+    } = event || {};
 
     const shouldAnimate = this.props.animate && this.state.animate();
 
@@ -92,8 +75,7 @@ class EventItem extends PureComponent {
           animationDuration: shouldAnimate ? '.4s' : 'unset',
         }}
       >
-        {stencil ? <EventItemStencil height={56}
-          style={{ opacity: 100 - (0.05 * order) }}/> : <Fragment>
+        {stencil ? <EventItemStencil order={order}/> : <Fragment>
           <EventItemStatusColumn>
             <CheckCircle title="Allowed event" />
           </EventItemStatusColumn>

@@ -20,18 +20,21 @@ const EventNameText = styled.span`
   font-weight: 500;
 `
 
-const PageEvent = ({ event }) => (<EventNameText title={event.properties.title}>
+const PageEvent = ({ event }) => (event ?
+  <EventNameText title={event.properties.title}>
   {event.properties.title}
-</EventNameText>);
+</EventNameText> : null);
 
-const IdentifyEvent = ({ event }) => (
+const IdentifyEvent = ({ event }) => (event ?
   <EventNameText title={`${event.userId} (${event.traits.email})`}>
     {event.userId} ({event.traits.email})
-  </EventNameText>
+  </EventNameText> : null
 );
-const TrackEvent = ({ event }) => (<EventNameText title={event.event}>
-  {event.event}
-</EventNameText>);
+const TrackEvent = ({ event }) => (event ?
+  <EventNameText title={event.event}>
+    {event.event}
+  </EventNameText>
+ : null);
 
 const typesMap = {
   page: PageEvent,
@@ -41,7 +44,8 @@ const typesMap = {
 
 export const EventName = ({ type, event }) => {
   const Component = typesMap[type];
-  return <Component event={event}/>;
+
+  return Component ? <Component event={event}/> : null;
 };
 
 export const EventTime = ({ time }) => (<time title={time}>
