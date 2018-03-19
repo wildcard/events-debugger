@@ -1,29 +1,33 @@
 export default class Events {
   constructor(url) {
     this.url = url;
-  }
-
-  handleEventSourceError = (onEventSourceError) => () => {
-    onEventSourceError && onEventSourceError();
-  }
-
-  listen(onEventReceived, onEventSourceError) {
     this.source = new EventSource(this.url);
-    this.source.onmessage = onEventReceived;
-    this.source.onerror = this.handleEventSourceError(onEventSourceError);
+  }
 
-    this.source.onopen = console.log.bind(this, 'EventSource opened!')
+  _onError = (e) => {
+    if (e.readyState === EventSource.CLOSED) {
+      this.onComplete();
+    } else {
+      this.onError(e);
+    }
+  }
+
+  listen(onEventReceived, onEventSourceError, onOpen, onComplete) {
+    this.onMessage = onEventReceived;
+    this.onError = onEventSourceError;
+    this.onOpen = onOpen;
+    this.onComplete = onComplete;
+
+    this.source.addEventListener('message', this.onMessage, false);
+    this.source.addEventListener('error', this._onError, false);
+    this.source.addEventListener('open', this.onOpen, false);
   }
 
   close () {
+    this.source.removeEventListener('error', this._onError, false);
+    this.source.removeEventListener('message', this.onMessage, false);
+    this.source.removeEventListener('open', this.onOpen, false);
+    this.onComplete();
     this.source.close();
-    console.log('EventSource closed!')
   }
 }
-
-// export const listenForEvents = (handleEventReceived, handleEventSourceError) => {
-//   const source = new EventSource(EVENT_SOURCE_URL);
-//
-//   source.onmessage = handleEventReceived;
-//   source.onerror = handleEventSourceError;
-// }

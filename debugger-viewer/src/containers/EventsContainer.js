@@ -4,10 +4,11 @@ import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
 import { prependPendingEvents } from '../actions'
 import { getVisibleEvents } from '../reducers/events'
+import Immutable from 'immutable'
 import EventItem from '../components/EventItem'
 import EventsList from '../components/EventsList'
 import { InfiniteLoader, List, AutoSizer } from 'react-virtualized';
-import { Overlay, Spinner } from 'evergreen-ui';
+import { Overlay, Spinner, InlineAlert, Button } from 'evergreen-ui';
 import { TOOLBAR_HEIGHT } from '../variables';
 import { backgroundColor } from '../pallete'
 
@@ -78,18 +79,18 @@ class EventsContainer extends PureComponent {
     });
   }
 
-  rowRenderer = ({ key, index, style, isScrolling, isVisible}) => {
+  rowRenderer = ({ key, index, style, isScrolling, isVisible }) => {
     const event = this.props.events.get(index);
-    const { id } = event;
+    const { id } = event || {};
     const {loadedRowsMap, renderedRowsMap} = this.state;
     const isAlreayRendered = renderedRowsMap[id];
+    const renderStencil = (isScrolling && !event) || loadedRowsMap[index] !== STATUS_LOADED;
+
+
     return (
-      isScrolling ? <div key={key} style={style}>... is Scrolling</div> :
-      loadedRowsMap[index] === STATUS_LOADED ?
-        <EventItem key={key}
-          animate={!isScrolling && index < 5}
-          event={event} style={style}/> :
-        <div key={key} style={style}>Not loaded</div>
+      <EventItem key={key} order={index} style={style}
+        event={event}
+        stencil={renderStencil} />
     )
   }
 
@@ -104,7 +105,6 @@ class EventsContainer extends PureComponent {
   handleRowRendered = onRowsRendered => (args) => {
     const { overscanStartIndex, overscanStopIndex, startIndex, stopIndex } = args;
     const {renderedRowsMap} = this.state;
-    // console.log(overscanStartIndex, overscanStopIndex, startIndex, stopIndex);
     const events = this.props.events.slice(startIndex, stopIndex);
 
     events.forEach(event => {
@@ -130,21 +130,22 @@ class EventsContainer extends PureComponent {
     const rowCount = this.props.events.size;
 
     return (<div>
-      {this.renderMeta()}
-
-      {this.props.isLoading ? <Overlay isShown
+      <Overlay isShown={this.props.isLoading}
         containerProps={{
           display:"flex",
           justifyContent:"center",
           alignItems:"center",
         }}>
         <Spinner />
-      </Overlay> : null }
+      </Overlay>
 
-      {this.props.pendingCount ? <div>
-        Pending events {this.props.pendingCount}
-        <button onClick={this.props.prependPendingEvents}>Click to add</button>
-    </div> : null}
+      {this.props.pendingCount ? <div style={{ display: 'flex', justifyContent: 'center' }}>
+        {<InlineAlert type="question" marginBottom={16}>
+          Pending events {this.props.pendingCount}
+
+          <Button onClick={this.props.prependPendingEvents}>Click to add</Button>
+        </InlineAlert>}
+      </div> : null}
 
       <InfiniteLoader
     isRowLoaded={this.isRowLoaded}
@@ -172,14 +173,11 @@ class EventsContainer extends PureComponent {
 }
 
 EventsContainer.propTypes = {
-  events: PropTypes.arrayOf(PropTypes.shape({
-    id: PropTypes.string.isRequired,
-    data: PropTypes.object.isRequired,
-  })).isRequired,
-  isPaused: PropTypes.bool.isRequired
+  events: PropTypes.instanceOf(Immutable.List).isRequired,
+  isPaused: PropTypes.bool.isRequired,
+  pendingCount: PropTypes.number,
+  prependPendingEvents: PropTypes.func,
 }
-
-// const get
 
 const getEventsList = (state) => state.events.list;
 const getVisibleEventIds = (state) => state.events.visibleEventIds;

@@ -8,3 +8,8 @@
     opacity: 1;
   }
 }
+
+.event__stencil {
+  height: 56px;
+  width: 540px;
+}

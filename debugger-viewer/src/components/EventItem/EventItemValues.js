@@ -15,7 +15,7 @@ const EventNameText = styled.span`
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
-  max-width: 460px;
+  max-width: 170px;
   text-align: left;
   font-weight: 500;
 `

@@ -20,7 +20,7 @@ services:
 
   sentry-cron:
     <<: *sentry
-    
+
   sentry-worker-1:
     <<: *sentry
 

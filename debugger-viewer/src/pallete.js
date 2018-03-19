@@ -1,2 +1,4 @@
-export const colorBorder = '#d5dee6';
-export const backgroundColor = '#f7f8fa';
+import { colors } from 'evergreen-ui';
+
+export const colorBorder = colors.neutral['30'];
+export const backgroundColor = colors.neutral['5'];

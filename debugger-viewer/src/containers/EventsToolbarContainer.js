@@ -20,6 +20,7 @@ class EventsToolbarContainer extends Component {
       statusValue={this.props.status}
       onSearch={this.props.search}
       searchValue={this.props.searchInput}
+      isIndexing={this.props.isIndexing}
       />);
   }
 }
@@ -27,7 +28,8 @@ class EventsToolbarContainer extends Component {
 const mapStateToProps = state => ({
   status: isOperational(state.events) ? 'LIVE' : state.events.isPaused ? 'PAUSE' : null,
   isPaused: state.events.isPaused,
-  searchInput: state.events.searchInput
+  searchInput: state.events.searchInput,
+  isIndexing: state.events.isIndexing,
 })
 
 export default connect(

@@ -1,7 +1,17 @@
 import React, { PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import debounce from 'lodash.debounce';
-import { Pane, SegmentedControl, SearchInput } from 'evergreen-ui';
+import {
+  Pane,
+  SegmentedControl,
+  SearchInput,
+  Spinner,
+  Tooltip,
+  Text,
+ } from 'evergreen-ui';
+ import Box from 'ui-box';
+ import Transition from 'react-transition-group/Transition';
+
 import { TOOLBAR_HEIGHT } from '../../variables';
 import { colorBorder } from '../../pallete';
 
@@ -22,6 +32,7 @@ class EventsToolBar extends PureComponent {
       statusValue,
       onSearch,
       searchValue,
+      isIndexing,
     } = this.props;
 
     return (<Pane height={TOOLBAR_HEIGHT}
@@ -45,11 +56,27 @@ class EventsToolBar extends PureComponent {
         value={statusValue}
         onChange={onStatusChange}/>
 
-      <SearchInput height={40}
-        marginLeft={16}
-        placeholder="Type to search..."
-        onChange={this.handleSearchInputChange}
-        width="100%"/>
+      <Box width="100%" display="flex" alignItems="center" position="relative">
+        <SearchInput height={40}
+          marginLeft={16}
+          placeholder="Type to search..."
+          onChange={this.handleSearchInputChange}
+          width="100%" />
+        {isIndexing ? <Box zIndex="2" position="absolute" right="10px">
+            <Transition in={isIndexing} timeout={500}>
+              {(state) => (
+                <Tooltip content="Indexing...">
+                  <Spinner size={24} style={{
+                    transition: `opacity 500ms ease-in-out`,
+                    opacity: state === 'entered' ? 1 : 0,
+                  }} />
+                </Tooltip>
+              )}
+            </Transition>
+        </Box>
+           : null}
+      </Box>
+
     </Pane>);
   }
 }

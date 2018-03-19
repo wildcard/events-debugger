@@ -88,5 +88,13 @@ add fixes to koa, make it more resilient
 
 > 2018-03-18 06:40 - 08:00 - experiment with lunr + web worker
 
+> 2018-03-18 18:10 - 00:00 - started testing + benchmarking + search via web worker
+
+> 2018-03-19 00:00 - 01:00 - exploring UI/UX ideas in Evergreen UI
+
+> 2018-03-19 01:00 - 05:00 - add new UI/UX from Evergreen (pause pending message) + stencil
+
+> 2018-03-19 06:00 - 06:30 - consider persisting to indexDB the eventSource then consuming events + consider implementing caping mech to avoid consuming too much memory (index + render) 
+
 Comments
 --------

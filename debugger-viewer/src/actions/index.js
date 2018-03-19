@@ -1,45 +1,27 @@
 import * as types from '../constants/ActionTypes'
 import { Observable } from 'rxjs/Observable';
-import { bufferCount, bufferTime, delay, concatAll } from 'rxjs/operators';
-import flatten from 'flat';
-import mapValues from 'lodash.mapvalues';
-import isEmpty from 'lodash.isempty';
+import {
+  bufferTime,
+  windowTime,
+  mergeAll,
+  tap,
+} from 'rxjs/operators';
 import { filterEvent } from '../reducers/events';
-const RECEIVE_EVENTS_BUFFER_SIZE = 5;
-
-const parseEventMessage = message => {
-  const { data: rawData } = message;
-  const data = JSON.parse(rawData);
-  const flatData = mapValues(flatten(data), val => {
-    if (isEmpty(val)) {
-      return String();
-    } else {
-      return String(val).toLowerCase();
-    }
-  });
-  const {
-    messageId: id
-  } = data;
-
-  return {
-    id,
-    rawData,
-    flatData,
-    ...data
-  };
-}
+import parseEventMessageData from '../utils/parse-event-message-data';
+const RECEIVE_EVENTS_RENDER_BUFFER_SIZE = 5;
+const RECEIVE_EVENTS_INDEX_BUFFER_SIZE = 1000;
 
 const receiveEventWhilePaused = (event, searchInput) => ({
   type: types.RECEIVED_PENDING_EVENT,
   event,
   searchInput
-})
+});
 
 const receiveEventsWhilePaused = (events, searchInput) => ({
   type: types.RECEIVED_PENDING_EVENTS,
   events,
   searchInput
-})
+});
 
 export const prependPendingEvents = () => (dispatch, getState) => {
   const {
@@ -52,11 +34,11 @@ export const prependPendingEvents = () => (dispatch, getState) => {
     events,
     searchInput
   })
-}
+};
 
 const receiveEvent = eventMessage => (dispatch, getState) => {
   const { isPaused, searchInput } = getState().events;
-  const event = parseEventMessage(eventMessage);
+  const event = parseEventMessageData(eventMessage.data);
 
   if (isPaused) {
     dispatch(receiveEventWhilePaused(event, searchInput));
@@ -67,11 +49,11 @@ const receiveEvent = eventMessage => (dispatch, getState) => {
       searchInput
     });
   }
-}
+};
 
 const receiveEvents = eventMessages => (dispatch, getState) => {
   const { isPaused, searchInput } = getState().events;
-  const events = eventMessages.map(parseEventMessage);
+  const events = eventMessages.map(eventMessage => parseEventMessageData(eventMessage.data));
 
   if (isPaused) {
     dispatch(receiveEventsWhilePaused(events, searchInput));
@@ -82,39 +64,104 @@ const receiveEvents = eventMessages => (dispatch, getState) => {
       searchInput
     });
   }
-}
+};
 
 const startListening = () => ({
   type: types.START_LISTENING_FOR_EVENTS
 });
 
+export const stopListening = () => (dispatch, getState, { events }) => {
+  const { subscriptions } = getState().events;
+  const {
+    indexEventSubscription,
+    renderEventsSubscription,
+  } = subscriptions;
+
+  dispatch({
+    type: types.STOP_LISTENING_FOR_EVENTS
+  });
+
+  indexEventSubscription.unsubscribe();
+  renderEventsSubscription.unsubscribe();
+  console.log('EventSource closed!');
+  events.close();
+};
+
 const errorReceivingEvent = () => ({
   type: types.ERROR_RECEIVING_EVENT
 })
 
-export const streamEventsBuffer = (events, subscribtion) => dispatch => {
-  const eventsObservable = Observable.create(observer => {
-    dispatch(startListening());
-
-    events.listen(eventMessage => {
-      observer.next(eventMessage);
-    }, () => {
-      dispatch(errorReceivingEvent());
-    });
+const indexEvents = (eventMessagesData) => (dispatch, getState, { searchWorker }) => {
+  dispatch({
+    type: types.INDEX_EVENTS_BUFFER,
+    startIndexTime: Date.now(),
   });
 
-  return eventsObservable
-    .pipe(
-      // bufferTime(1000),
-      bufferCount(RECEIVE_EVENTS_BUFFER_SIZE),
-      // concatAll(),
-      delay(1000))
-    // .pipe(bufferCount(RECEIVE_EVENTS_BUFFER_SIZE))
-    // .pipe(delay(1000))
+  searchWorker.index(eventMessagesData)
+    .then(lastIndexedEventId => {
+      dispatch(indexEventsFinished(lastIndexedEventId));
+    });
+}
+
+const indexEventsFinished = (lastIndexedEventId) => ({
+  type: types.INDEX_EVENTS_BUFFER_FINISHED,
+  lastIndexedEventId,
+  finishedIndexTime: Date.now(),
+})
+
+export const streamEventsBuffer = () => (dispatch, getState, { events }) => {
+  const eventsObservable = Observable.create(observer => {
+
+    events.listen(
+      (eventMessage) => {
+        observer.next(eventMessage);
+      },
+      (e) => {
+        observer.error();
+        dispatch(errorReceivingEvent());
+      },
+      () => {
+        dispatch(startListening());
+      },
+      () => {
+        observer.complete();
+      }
+    );
+
+    return () => {
+      events.close();
+    };
+  });
+
+  // feed events for search index
+  const indexEventSubscription = eventsObservable
+    .pipe(bufferTime(5000, 2500, RECEIVE_EVENTS_INDEX_BUFFER_SIZE))
+    .subscribe(eventMessages => {
+      const eventMessagesData = eventMessages.map(em => em.data);
+
+      dispatch(indexEvents(eventMessagesData));
+    });
+
+  dispatch({
+    type: types.INDEX_EVENTS_SUBSCRIPTION,
+     indexEventSubscription
+  })
+
+  // feed events for render
+  const renderEventsSubscription = eventsObservable.pipe(
+      bufferTime(1000, 1000, RECEIVE_EVENTS_RENDER_BUFFER_SIZE)
+    )
     .subscribe(eventMessages => {
       eventMessages &&
-        window.requestAnimationFrame(time => dispatch(receiveEvents(eventMessages)));
-    })//.subscribe(subscribtion);
+        window.requestAnimationFrame(time =>
+          dispatch(receiveEvents(eventMessages))
+        );
+    });
+
+    dispatch({
+      type: types.RENDER_EVENTS_SUBSCRIPTION,
+       renderEventsSubscription
+    })
 }
 
 export const listenForEvents = (events) => dispatch => {
@@ -133,23 +180,41 @@ export const resumeEvents = () => ({
   type: types.RESUME_EVENTS,
 });
 
-export const search = (input) => (dispatch, getState) => {
-  const { list } = getState().events;
+export const search = (input) => (dispatch, getState, { searchWorker }) => {
+  const { list, search } = getState().events;
+  const { lastIndexedEventId } = search;
+  let result = [];
 
   dispatch({
     type: types.SEARCH_EVENTS,
     input,
-    ids: !input ? list.map(e => e.id): null,
+    ids: !input ? list.map(e => e.id): null, // search filter cleared
   });
 
-  window.requestAnimationFrame(time => {
+  // any search index exists
+  if (lastIndexedEventId) {
+    const lastIndexedEventListIndex = list.findIndex(i => lastIndexedEventId === i.id);
+    const nonIndexedListSlice = list.slice(0, lastIndexedEventListIndex);
 
-    const result = list.filter(filterEvent(input));
+    result = nonIndexedListSlice
+      .filter(filterEvent(input))
+      .map(e => e.id);
 
-    dispatch({
-      type: types.RECEIVED_SEARCH_RESULTS,
-      result
-    })
-  });
+    searchWorker.search(input).then(matchedIds => {
+      dispatch({
+        type: types.RECEIVED_SEARCH_RESULTS,
+        result: result.concat(matchedIds)
+      })
+    });
 
+  } else {
+    window.requestAnimationFrame(time => {
+      result = list.filter(filterEvent(input)).map(e => e.id);
+    });
+  }
+
+  dispatch({
+    type: types.RECEIVED_SEARCH_RESULTS,
+    result
+  })
 }

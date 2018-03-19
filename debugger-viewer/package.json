@@ -13,9 +13,11 @@
     "moment": "^2.21.0",
     "normalize.css": "^8.0.0",
     "react": "^16.2.0",
+    "react-content-loader": "^3.1.1",
     "react-dom": "^16.2.0",
     "react-redux": "^5.0.7",
     "react-scripts": "1.1.1",
+    "react-transition-group": "^2.2.1",
     "react-virtualized": "^9.18.5",
     "redux": "^3.7.2",
     "redux-logger": "^3.0.6",
@@ -34,6 +36,9 @@
   },
   "devDependencies": {
     "babel-plugin-transform-class-properties": "^6.24.1",
+    "benchmark": "^2.1.4",
+    "eventsourcemock": "^1.1.0",
+    "microtime": "^2.1.7",
     "redux-devtools-extension": "^2.13.2",
     "workerize-loader": "^1.0.2"
   }

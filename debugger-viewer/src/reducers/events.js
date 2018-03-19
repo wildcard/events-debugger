@@ -2,6 +2,7 @@ import { combineReducers } from 'redux'
 import { List } from 'immutable'
 import {
   START_LISTENING_FOR_EVENTS,
+  STOP_LISTENING_FOR_EVENTS,
   RECEIVE_EVENT,
   RECEIVE_EVENTS,
   RECEIVED_PENDING_EVENT,
@@ -13,6 +14,10 @@ import {
   ERROR_RECEIVING_EVENT,
   SEARCH_EVENTS,
   RECEIVED_SEARCH_RESULTS,
+  INDEX_EVENTS_BUFFER,
+  INDEX_EVENTS_BUFFER_FINISHED,
+  INDEX_EVENTS_SUBSCRIPTION,
+  RENDER_EVENTS_SUBSCRIPTION,
 } from '../constants/ActionTypes'
 
 const selectEvent = (state, action) => {
@@ -87,7 +92,8 @@ const visibleEventIds = (state = [], action) => {
           ...state,
         ];
       case RECEIVED_SEARCH_RESULTS:
-        return action.result.map(r => r.id);
+        return action.result;
+      // clear search input
       case SEARCH_EVENTS:
         const { input, ids } = action;
 
@@ -146,6 +152,8 @@ const status = (state = 'INIT', action) => {
   switch (action.type) {
     case START_LISTENING_FOR_EVENTS:
       return 'START';
+    case STOP_LISTENING_FOR_EVENTS:
+      return 'STOP';
     case RECEIVE_EVENT:
     case RECEIVE_EVENTS:
       return 'RECEIVING';
@@ -189,6 +197,59 @@ const isLoading = (state = false, action) => {
   }
 };
 
+const isIndexing = (state = false, action) => {
+  switch (action.type) {
+    case INDEX_EVENTS_BUFFER:
+      return true;
+    case INDEX_EVENTS_BUFFER_FINISHED:
+      return false;
+    default:
+      return state;
+  }
+};
+
+const search = (state = {}, action) => {
+  const {
+    type,
+    ...other
+  } = action;
+
+  switch (type) {
+    case RECEIVED_SEARCH_RESULTS:
+      return {
+        ...state,
+        lastResultCount: action.result.length,
+      };
+    case INDEX_EVENTS_BUFFER:
+
+      return {
+        ...state,
+        ...other,
+      };
+    case INDEX_EVENTS_BUFFER_FINISHED:
+      return {
+        ...state,
+        ...other,
+      };
+    default:
+      return state;
+  }
+}
+
+const subscriptions = (state = {}, action) => {
+  const { type, ...other } = action;
+  switch (action.type) {
+    case INDEX_EVENTS_SUBSCRIPTION:
+    case RENDER_EVENTS_SUBSCRIPTION:
+      return {
+        ...state,
+        ...other,
+      };
+    default:
+      return state;
+  }
+}
+
 export default combineReducers({
     status,
     list,
@@ -197,7 +258,10 @@ export default combineReducers({
     visibleEventIds,
     isPaused,
     isLoading,
+    isIndexing,
     searchInput,
+    search,
+    subscriptions,
   });
 
 export const getEvent = (state, id) => (
