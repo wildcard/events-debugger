@@ -2,7 +2,7 @@ import React, { Fragment, PureComponent } from 'react';
 import PropTypes from 'prop-types';
 import { Pane } from 'evergreen-ui';
 import CheckCircle from '../CheckCircle';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import {
   EventItemStatusColumn,
   EventItemTypeColumn,
@@ -15,26 +15,21 @@ import {
   EventTime
 } from './EventItemValues';
 import EventItemStencil from './EventItemStencil';
-import './EventItem.css';
+import { backgroundColor } from '../../pallete';
+import { EVENT_ITEM_HEIGHT } from '../../variables';
+
+const grow = keyframes`
+  from {
+    height: 0;
+    opacity: 0;
+  }
+  to {
+    height: ${EVENT_ITEM_HEIGHT}px;
+    opacity: 1;
+  }
+`
 
 class EventItem extends PureComponent {
-  constructor(props) {
-    super(props);
-
-    this.alreadyAnimated = false;
-
-    this.state = {
-      animate: () => {
-          if (this.alreadyAnimated) {
-              return false;
-          } else {
-            this.alreadyAnimated = true;
-            return true;
-          }
-      },
-    }
-  }
-
   render() {
     const {
       className,
@@ -42,6 +37,7 @@ class EventItem extends PureComponent {
       event,
       stencil,
       order,
+      animate
     } = this.props;
 
     const {
@@ -49,51 +45,43 @@ class EventItem extends PureComponent {
       receivedAt,
     } = event || {};
 
-    const shouldAnimate = this.props.animate && this.state.animate();
-
     return (
-      <Pane
-        is="button"
-        {...{
-          alignItems: 'center',
-          borderTop: 'none',
-          borderLeft: 'none',
-          borderRight: 'none',
-          borderBottom: 'extraMuted',
-          display: 'flex',
-          height: 56,
-          justifyContent: 'flex-start',
-          width: '100%',
-          paddingLeft: 16,
-          paddingRight: 16,
-        }}
-        className={className}
-        style={{
-          ...style,
-          animationName: 'grow',
-          animationTimingFunction: 'cubic-bezier(.4,0,.2,1)',
-          animationDuration: shouldAnimate ? '.4s' : 'unset',
-        }}
-      >
-        {stencil ? <EventItemStencil order={order}/> : <Fragment>
-          <EventItemStatusColumn>
-            <CheckCircle title="Allowed event" />
-          </EventItemStatusColumn>
+        <Pane
+          is="button"
+          alignItems="center"
+          borderTop="none"
+          borderLeft="none"
+          borderRight="none"
+          borderBottom="extraMuted"
+          display="flex"
+          height={6}
+          justifyContent="flex-start"
+          width="100%"
+          paddingLeft={6}
+          paddingRight={6}
+          className={className + ` ${animate ? 'event--entered' : ''}`}
+          style={style}
+        >
+          {stencil ? <EventItemStencil order={order}/> :
+          <Fragment>
+            <EventItemStatusColumn>
+              <CheckCircle title="Allowed event" />
+            </EventItemStatusColumn>
 
-          <EventItemTypeColumn>
-            <EventType>{type}</EventType>
-          </EventItemTypeColumn>
+            <EventItemTypeColumn>
+              <EventType>{type}</EventType>
+            </EventItemTypeColumn>
 
-          <EventItemNameColumn>
-            <EventName type={type} event={event} />
-          </EventItemNameColumn>
+            <EventItemNameColumn>
+              <EventName type={type} event={event} />
+            </EventItemNameColumn>
 
-          <EventItemTimeColumn>
-            <EventTime time={receivedAt}/>
-          </EventItemTimeColumn>
-        </Fragment> }
-      </Pane>
-    );
+            <EventItemTimeColumn>
+              <EventTime time={receivedAt}/>
+            </EventItemTimeColumn>
+          </Fragment> }
+        </Pane>
+      );
   }
 }
 
@@ -105,13 +93,23 @@ EventItem.propTypes = {
     }),
     stencil: PropTypes.bool,
     order: PropTypes.number,
-    animate: PropTypes.bool,
     className: PropTypes.string,
     style: PropTypes.object,
 };
 
-export default styled(EventItem)`
-:focus, :hover {
-  outline: none;
-  background: #f7f8fa;
+const animationType = Array(10).fill().map((_, i) => (
+  `${grow} ${600 + i * 50}ms cubic-bezier(.4,0,.2,1) ${300 + ((10 - i) * 30)}ms`
+));
+
+export default styled(EventItem).attrs({
+  order: props => props.order || 0
+})`
+  &.event--entered {
+    animation: ${props => animationType[props.order]};
+  }
+
+  :focus, :hover, &.event--selected {
+    outline: none;
+    background: ${backgroundColor};
+  }
 `;

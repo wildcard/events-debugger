@@ -1,6 +1,6 @@
 import { colors } from 'evergreen-ui';
 
-export const colorBorder = colors.neutral['30'];
+export const borderColor = colors.neutral['30'];
 export const backgroundColor = colors.neutral['5'];
 
 export const StencilForegoround = colors.neutral['100'];

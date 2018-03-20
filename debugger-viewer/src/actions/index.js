@@ -6,6 +6,7 @@ import {
   mergeAll,
   tap,
 } from 'rxjs/operators';
+import once from 'lodash.once';
 import { filterEvent } from '../reducers/events';
 import parseEventMessageData from '../utils/parse-event-message-data';
 const RECEIVE_EVENTS_RENDER_BUFFER_SIZE = 5;
@@ -52,6 +53,10 @@ const receiveEvent = eventMessage => (dispatch, getState) => {
 };
 
 const receiveEvents = eventMessages => (dispatch, getState) => {
+  if (!eventMessages || !eventMessages.length) {
+    return;
+  }
+
   const { isPaused, searchInput } = getState().events;
   const events = eventMessages.map(eventMessage => parseEventMessageData(eventMessage.data));
 
@@ -69,6 +74,12 @@ const receiveEvents = eventMessages => (dispatch, getState) => {
 const startListening = () => ({
   type: types.START_LISTENING_FOR_EVENTS
 });
+
+const startReceivingEvents = () => ({
+  type: types.START_RECEIVING_EVENTS
+});
+
+const ReceivedFirstEvent = once((dispatch) => dispatch(startReceivingEvents()));
 
 export const stopListening = () => (dispatch, getState, { events }) => {
   const { subscriptions } = getState().events;
@@ -92,6 +103,10 @@ const errorReceivingEvent = () => ({
 })
 
 const indexEvents = (eventMessagesData) => (dispatch, getState, { searchWorker }) => {
+  if (!eventMessagesData || !eventMessagesData.length) {
+    return;
+  }
+
   dispatch({
     type: types.INDEX_EVENTS_BUFFER,
     startIndexTime: Date.now(),
@@ -115,6 +130,7 @@ export const streamEventsBuffer = () => (dispatch, getState, { events }) => {
     events.listen(
       (eventMessage) => {
         observer.next(eventMessage);
+        ReceivedFirstEvent(dispatch)
       },
       (e) => {
         observer.error();
@@ -137,8 +153,11 @@ export const streamEventsBuffer = () => (dispatch, getState, { events }) => {
   const indexEventSubscription = eventsObservable
     .pipe(bufferTime(5000, 2500, RECEIVE_EVENTS_INDEX_BUFFER_SIZE))
     .subscribe(eventMessages => {
-      const eventMessagesData = eventMessages.map(em => em.data);
+      if (!eventMessages || !eventMessages.length) {
+        return;
+      }
 
+      const eventMessagesData = eventMessages.map(em => em.data);
       dispatch(indexEvents(eventMessagesData));
     });
 
@@ -152,10 +171,13 @@ export const streamEventsBuffer = () => (dispatch, getState, { events }) => {
       bufferTime(1000, 1000, RECEIVE_EVENTS_RENDER_BUFFER_SIZE)
     )
     .subscribe(eventMessages => {
-      eventMessages &&
-        window.requestAnimationFrame(time =>
-          dispatch(receiveEvents(eventMessages))
-        );
+      if (!eventMessages || !eventMessages.length) {
+        return;
+      }
+
+      // requestAnimationFrame(time => {
+        dispatch(receiveEvents(eventMessages))
+      // });
     });
 
     dispatch({

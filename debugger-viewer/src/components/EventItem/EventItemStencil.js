@@ -2,12 +2,13 @@ import React from 'react';
 import ContentLoader from 'react-content-loader';
 import styled from 'styled-components';
 import { StencilForegoround, StencilBackgoround } from '../../pallete';
+import { EVENT_ITEM_HEIGHT } from '../../variables';
 
 const EventItemStencil = (props) => (
 	<ContentLoader
-		height={56}
+		height={EVENT_ITEM_HEIGHT}
 		width={540}
-		speed={4}
+		speed={3}
 		primaryColor={StencilBackgoround}
 		secondaryColor={StencilForegoround}
     {...props}
@@ -19,8 +20,14 @@ const EventItemStencil = (props) => (
 	</ContentLoader>
 )
 
-export default styled(EventItemStencil)`
-	height: 56px;
+const opacityType = Array(10).fill().map((_, i) => (
+  1 - (0.1 * i)
+));
+
+export default styled(EventItemStencil).attrs({
+  order: props => props.order || 0
+})`
+	height: ${EVENT_ITEM_HEIGHT}px;
 	width: 540px;
-	opacity: ${props => (1 - (0.1 * props.order))}
+	opacity: ${props => opacityType[props.order]};
 `;

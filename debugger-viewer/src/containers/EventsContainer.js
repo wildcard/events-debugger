@@ -1,173 +1,127 @@
-import React, { PureComponent } from 'react'
+import React, { Fragment, PureComponent } from 'react'
 import PropTypes from 'prop-types'
 import { connect } from 'react-redux'
 import { createSelector } from 'reselect'
 import { prependPendingEvents } from '../actions'
 import { getVisibleEvents } from '../reducers/events'
 import Immutable from 'immutable'
+import moment from 'moment';
 import EventItem from '../components/EventItem'
 import EventsList from '../components/EventsList'
-import { InfiniteLoader, List, AutoSizer } from 'react-virtualized';
-import { Overlay, Spinner, InlineAlert, Button } from 'evergreen-ui';
-import { TOOLBAR_HEIGHT } from '../variables';
+import NoEvents from '../components/NoEvents';
+import { InfiniteLoader, List, AutoSizer, defaultCellRangeRenderer } from 'react-virtualized';
+import { Overlay, Spinner, InlineAlert, Button, Pane, colors } from 'evergreen-ui';
+import { TOOLBAR_HEIGHT, EVENT_ITEM_HEIGHT } from '../variables';
 import { backgroundColor } from '../pallete'
 
-const STATUS_LOADING = 1;
-const STATUS_LOADED = 2;
-const STATUS_RENDERED = 3;
+const PendingEventsPane = ({ pendingCount, prependPendingEvents }) => (
+  <Pane display="flex"
+    borderBottom="extraMuted"
+    minHeight={40}
+    alignItems="center"
+    justifyContent="center"
+    backgroundColor={colors.blue['10A']}>
+    {<InlineAlert type="question">
+      {pendingCount} Pending events
+      <Button marginLeft={5} onClick={prependPendingEvents}>See pending events</Button>
+    </InlineAlert>}
+  </Pane>
+);
 
 class EventsContainer extends PureComponent {
   constructor(props) {
     super(props);
 
-    this.timeoutIdMap = {};
-  }
-
-  state = {
-    loadedRowCount: 0,
-    loadedRowsMap: {},
-    renderedRowsMap: {},
-    loadingRowCount: 0,
-  }
-
-  componentWillUnmount() {
-    Object.keys(this.timeoutIdMap).forEach(timeoutId => {
-      clearTimeout(timeoutId);
-    });
-  }
-
-  isRowLoaded = ({ index }) => {
-    const {loadedRowsMap} = this.state;
-   return Boolean(loadedRowsMap[index]); // STATUS_LOADING or STATUS_LOADED
-  }
-
-  loadMoreRows = ({ startIndex, stopIndex }) => {
-    const {loadedRowsMap, loadingRowCount} = this.state;
-    const increment = stopIndex - startIndex + 1;
-
-    for (let i = startIndex; i <= stopIndex; i++) {
-      loadedRowsMap[i] = STATUS_LOADING;
-    }
-
-    this.setState({
-      loadingRowCount: loadingRowCount + increment,
-    });
-
-    const timeoutId = setTimeout(() => {
-      const {loadedRowCount, loadingRowCount} = this.state;
-
-      delete this.timeoutIdMap[timeoutId];
-
-      for (let i = startIndex; i <= stopIndex; i++) {
-        loadedRowsMap[i] = STATUS_LOADED;
-      }
-
-      this.setState({
-        loadingRowCount: loadingRowCount - increment,
-        loadedRowCount: loadedRowCount + increment,
-      });
-
-      promiseResolver();
-    }, 1000 + Math.round(Math.random() * 2000));
-
-    this.timeoutIdMap[timeoutId] = true;
-
-    let promiseResolver;
-
-    return new Promise(resolve => {
-      promiseResolver = resolve;
-    });
+    this.renderedEvents = new Set();
+    this.lastScrollTop = null;
+    this.lastListSize = null;
   }
 
   rowRenderer = ({ key, index, style, isScrolling, isVisible }) => {
     const event = this.props.events.get(index);
     const { id } = event || {};
-    const {loadedRowsMap, renderedRowsMap} = this.state;
-    const isAlreayRendered = renderedRowsMap[id];
-    const renderStencil = (isScrolling && !event) || loadedRowsMap[index] !== STATUS_LOADED;
 
+    if (isScrolling || !event || !id) {
+      return <EventItem key={key} order={index} style={style} stencil />;
+    }
+
+    const shouldAnimateOnEnter = isVisible && !isScrolling && !this.renderedEvents.has(id) && index < 10;
+    this.renderedEvents.add(id);
 
     return (
-      <EventItem key={key} order={index} style={style}
+      <EventItem key={shouldAnimateOnEnter ? `${id}/${key}` : key}
+        order={index}
+        style={style}
         event={event}
-        stencil={renderStencil} />
+        animate={shouldAnimateOnEnter} />
     )
   }
 
-  clearData = () => {
-    this.setState({
-      loadedRowCount: 0,
-      loadedRowsMap: {},
-      loadingRowCount: 0,
-    });
+  cellRangeRenderer = (props) => {
+    const {
+      isScrolling,
+      rowStartIndex,
+      scrollTop,
+    } = props;
+
+    this.lastScrollTop = scrollTop;
+    this.lastEventsCount = this.props.events.size;
+
+    return defaultCellRangeRenderer(props);
   }
 
-  handleRowRendered = onRowsRendered => (args) => {
-    const { overscanStartIndex, overscanStopIndex, startIndex, stopIndex } = args;
-    const {renderedRowsMap} = this.state;
-    const events = this.props.events.slice(startIndex, stopIndex);
+  visibleScrollTop = () => {
+    if (this.lastEventsCount && this.props.events &&
+        this.lastEventsCount !== this.props.events.size && this.lastScrollTop > 0) {
+          const newEventsCount = this.props.events.size - this.lastEventsCount;
 
-    events.forEach(event => {
-      const { id } = event;
-      const renderCount = renderedRowsMap[id];
-      renderedRowsMap[id] = renderCount ? renderCount + 1 : 1;
-    });
-
-    onRowsRendered(args);
+          return this.lastScrollTop + newEventsCount * EVENT_ITEM_HEIGHT;
+        }
   }
 
-  renderMeta () {
-    const {loadedRowCount, loadingRowCount} = this.state;
-    const rowCount = this.props.events.size;
-    // console.log(this.props.filteredEvents);
-    return (<div>
-        <div>{loadingRowCount} loading, {loadedRowCount} loaded of {rowCount}</div>
-          {this.props.status}
-          </div>);
+  emptyState = () => {
+    return Array(10).fill().map((_, i) => (
+      <EventItem key={i}
+        order={i}
+        stencil
+        style={{ height: `${EVENT_ITEM_HEIGHT}px` }}/>)
+      );
   }
 
   render() {
-    const rowCount = this.props.events.size;
+    const {
+      events,
+      status,
+      isPaused,
+      pendingCount,
+      prependPendingEvents,
+     } = this.props;
+    const rowCount = events.size;
+
+    if (status.type === 'START') {
+      return <NoEvents minHeight={window.innerHeight - TOOLBAR_HEIGHT}/>;
+    }
 
     return (<div>
-      <Overlay isShown={this.props.isLoading}
-        containerProps={{
-          display:"flex",
-          justifyContent:"center",
-          alignItems:"center",
-        }}>
-        <Spinner />
-      </Overlay>
+        {isPaused && pendingCount ?
+          <PendingEventsPane {...{ pendingCount, prependPendingEvents }}/>
+          : null}
 
-      {this.props.pendingCount ? <div style={{ display: 'flex', justifyContent: 'center' }}>
-        {<InlineAlert type="question" marginBottom={16}>
-          Pending events {this.props.pendingCount}
-
-          <Button onClick={this.props.prependPendingEvents}>Click to add</Button>
-        </InlineAlert>}
-      </div> : null}
-
-      <InfiniteLoader
-    isRowLoaded={this.isRowLoaded}
-    loadMoreRows={this.loadMoreRows}
-    rowCount={rowCount}
-  >
-    {({ onRowsRendered, registerChild }) => (
         <AutoSizer disableHeight>
               {({width}) => (
-        <List
-          height={window.innerHeight - TOOLBAR_HEIGHT}
-          onRowsRendered={this.handleRowRendered(onRowsRendered)}
-          ref={registerChild}
-          rowCount={rowCount}
-          rowHeight={56}
-          rowRenderer={this.rowRenderer}
-          width={width}
-          style={{ backgroundColor }}
-        />)}
+          <List
+            height={window.innerHeight - TOOLBAR_HEIGHT}
+            rowCount={rowCount}
+            rowHeight={EVENT_ITEM_HEIGHT}
+            rowRenderer={this.rowRenderer}
+            width={width}
+            noRowsRenderer={this.emptyState}
+            cellRangeRenderer={this.cellRangeRenderer}
+            scrollTop={this.visibleScrollTop()}
+            style={{ backgroundColor }}
+          />
+      )}
       </AutoSizer>
-    )}
-      </InfiniteLoader>
     </div>);
   }
 }
@@ -203,7 +157,6 @@ const mapStateToProps = state => ({
   events: getFilteredEvents(state),
   status: state.events.status,
   isPaused: state.events.isPaused,
-  isLoading: state.events.isLoading,
 })
 
 export default connect(

@@ -9,6 +9,7 @@
     "lodash.debounce": "^4.0.8",
     "lodash.isempty": "^4.4.0",
     "lodash.mapvalues": "^4.6.0",
+    "lodash.once": "^4.1.1",
     "lunr": "^2.1.6",
     "moment": "^2.21.0",
     "normalize.css": "^8.0.0",

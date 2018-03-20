@@ -13,7 +13,7 @@ import {
  import Transition from 'react-transition-group/Transition';
 
 import { TOOLBAR_HEIGHT } from '../../variables';
-import { colorBorder } from '../../pallete';
+import { borderColor } from '../../pallete';
 
 class EventsToolBar extends PureComponent {
   constructor(props) {
@@ -39,7 +39,7 @@ class EventsToolBar extends PureComponent {
       display="flex"
       alignItems="center"
       justifyContent="flex-start"
-      borderBottom={`1px solid ${colorBorder}`}
+      borderBottom={`1px solid ${borderColor}`}
       paddingLeft={16}
       paddingRight={16}
       >

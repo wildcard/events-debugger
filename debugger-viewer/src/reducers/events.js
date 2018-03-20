@@ -3,6 +3,7 @@ import { List } from 'immutable'
 import {
   START_LISTENING_FOR_EVENTS,
   STOP_LISTENING_FOR_EVENTS,
+  START_RECEIVING_EVENTS,
   RECEIVE_EVENT,
   RECEIVE_EVENTS,
   RECEIVED_PENDING_EVENT,
@@ -148,25 +149,32 @@ const map = (state = {}, action) => {
   }
 }
 
+const setStatus = (type) => ({
+  type,
+  timestamp: Date.now()
+});
+
 const status = (state = 'INIT', action) => {
   switch (action.type) {
     case START_LISTENING_FOR_EVENTS:
-      return 'START';
+      return setStatus('START');
     case STOP_LISTENING_FOR_EVENTS:
-      return 'STOP';
+      return setStatus('STOP');
+    case START_RECEIVING_EVENTS:
+      return setStatus('FIRST_EVENT');
     case RECEIVE_EVENT:
     case RECEIVE_EVENTS:
-      return 'RECEIVING';
+      return setStatus('RECEIVING');
     case PAUSE_EVENTS:
-      return 'PAUSED';
+      return setStatus('PAUSED');
     case RESUME_EVENTS:
-      return 'RESUMED';
+      return setStatus('RESUMED');
     case ERROR_RECEIVING_EVENT:
-      return 'ERROR';
+      return setStatus('ERROR');
     case SEARCH_EVENTS:
-      return 'SEARCHING';
+      return setStatus('SEARCHING');
     case RECEIVED_SEARCH_RESULTS:
-      return 'SEARCH_FILTERD_VIEW';
+      return setStatus('SEARCH_FILTERD_VIEW');
     default:
         return state;
   }
@@ -188,6 +196,7 @@ const isLoading = (state = false, action) => {
     case START_LISTENING_FOR_EVENTS:
     case SEARCH_EVENTS:
        return true;
+    case START_RECEIVING_EVENTS:
     case RECEIVE_EVENT:
     case RECEIVE_EVENTS:
     case RECEIVED_SEARCH_RESULTS:

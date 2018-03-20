@@ -1,4 +1,4 @@
-import React, { Fragment, Component } from 'react';
+import React, { Fragment, PureComponent } from 'react';
 import { createStore, applyMiddleware} from 'redux'
 import { composeWithDevTools } from 'redux-devtools-extension';
 import { Provider } from 'react-redux'
@@ -10,6 +10,8 @@ import Events from './api/events'
 import EventsList from './containers/EventsContainer'
 import EventsToolBar from './containers/EventsToolbarContainer'
 import SearchWorker from 'workerize-loader!./search-worker'; // eslint-disable-line import/no-webpack-loader-syntax
+import { Pane } from 'evergreen-ui';
+import { borderColor } from './pallete';
 
 const EVENT_SOURCE_URL = 'http://localhost:3001/stream';
 const events = new Events(EVENT_SOURCE_URL);
@@ -34,10 +36,10 @@ const store = createStore(
 store.dispatch(streamEventsBuffer());
 
 setTimeout(() => {
-  store.dispatch(stopListening());
+  // store.dispatch(stopListening());
 }, 10000);
 
-class App extends Component {
+class App extends PureComponent {
   componentWillUnmount() {
     store.dispatch(stopListening());
   }
@@ -46,10 +48,11 @@ class App extends Component {
     return (
       <Provider store={store}>
         <div style={{ display: 'flex' }}>
-          <div style={{ maxWidth: '550px', flex: '1 0 auto' }}>
+          <Pane maxWidth="550px" flex="1 0 auto"
+            borderColor={borderColor} borderRight>
             <EventsToolBar />
             <EventsList />
-          </div>
+          </Pane>
           <div style={{ maxWidth: '550px', flex: '0 0 auto' }}>
 
           </div>

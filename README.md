@@ -94,7 +94,12 @@ add fixes to koa, make it more resilient
 
 > 2018-03-19 01:00 - 05:00 - add new UI/UX from Evergreen (pause pending message) + stencil
 
-> 2018-03-19 06:00 - 06:30 - consider persisting to indexDB the eventSource then consuming events + consider implementing caping mech to avoid consuming too much memory (index + render) 
+> 2018-03-19 06:00 - 06:30 - consider persisting to indexDB the eventSource then consuming events + consider implementing caping mech to avoid consuming too much memory (index + render)
+
+> 2018-03-20 00:00 - 06:00 - fix animation grow animation (only on newly rendered events) + fix scroll sync
+
+> 2018-03-20 06:00 - 14:00 - refracting + breaking and fixing the animation 😵
+
 
 Comments
 --------
