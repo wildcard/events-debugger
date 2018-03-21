@@ -30,7 +30,11 @@
     "workerize": "^0.1.7"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "clean": "rm -rf build",
+    "start:dev": "react-scripts start",
+    "prestart": "rm nohup.out",
+    "start": "nohup serve -s build &",
+    "prebuild": "npm run clean",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
@@ -41,6 +45,7 @@
     "eventsourcemock": "^1.1.0",
     "microtime": "^2.1.7",
     "redux-devtools-extension": "^2.13.2",
+    "serve": "^6.5.3",
     "workerize-loader": "^1.0.2"
   }
 }

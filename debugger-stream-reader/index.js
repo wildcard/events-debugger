@@ -8,6 +8,9 @@ const PassThrough = require('stream').PassThrough;
 const Raven = require('raven');
 Raven.config('https://fa5befd964b84192ab92b6f5e2126f93:b2ecefc1572b42b59533fb5768d2259e@sentry.io/301477').install();
 
+const clientOrigin = process.env.NODE_ENV === 'production' ? 
+  'http://localhost:5000' : 'http://localhost:3000';
+
 const app = new Koa();
 
 app.use(logger())
@@ -20,7 +23,7 @@ router.get('/stream', (ctx, next) => {
 
   ctx.set('Cache-Control', 'no-cache');
   ctx.set('Connection', 'keep-alive');
-  ctx.set('Access-Control-Allow-Origin', 'http://localhost:3000');
+  ctx.set('Access-Control-Allow-Origin', clientOrigin);
   // ctx.set('Access-Control-Allow-Credentials', 'true');
 
   const stream = subscribe({

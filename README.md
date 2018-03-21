@@ -23,6 +23,69 @@ This project should take 5-10 hours, depending on how in-depth you decide to go.
 
 ---
 
+Start
+-----
+
+please install make to use the `makefile`
+see following section for no love for `makefile`
+
+Please make sure you have docker installed beforehand, because the stream simulator is using docker
+
+run the following
+
+`make install`
+
+will install node dependencies for client & server
+
+`make start`
+
+run docker, client and server production builds
+
+no makefile
+-----------
+
+### docker
+
+`docker-compose up -d stream`
+
+### client
+
+`cd ./debugger-viewer`
+`npm i`
+`npm run build`
+`npm start`
+
+using serve, see `nohup.out` for `stdout`
+
+### server
+
+`cd ./debugger-stream-reader`
+`npm i`
+`npm start`
+
+using forever
+
+Running locally
+---------------
+
+### docker
+
+`docker-compose up stream`
+
+### client
+
+`cd ./debugger-viewer`
+`npm i`
+`npm start:dev`
+
+### server
+
+`cd ./debugger-stream-reader`
+`npm i`
+`npm start:dev`
+
+using nodemon
+
 Resources
 ---------
 
