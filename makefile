@@ -18,3 +18,11 @@ start: build
 		npm start;
 	cd ./debugger-stream-reader; \
 		npm start;
+	open http://localhost:5000
+
+stop:
+	docker-compose down;
+	cd ./debugger-viewer; \
+		npm stop;
+	cd ./debugger-stream-reader; \
+		npm stop;

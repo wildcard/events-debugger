@@ -31,6 +31,8 @@ see following section for no love for `makefile`
 
 Please make sure you have docker installed beforehand, because the stream simulator is using docker
 
+please make sure you have node lts :)
+
 run the following
 
 `make install`

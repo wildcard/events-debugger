@@ -28,16 +28,12 @@ if (process.env.NODE_ENV !== 'production') {
 
 const store = createStore(
   reducer,
-  // composeWithDevTools(
+  composeWithDevTools(
     applyMiddleware(...middleware)
-  // )
+  )
 );
 
 store.dispatch(streamEventsBuffer());
-
-setTimeout(() => {
-  // store.dispatch(stopListening());
-}, 10000);
 
 class App extends PureComponent {
   componentWillUnmount() {
@@ -53,9 +49,9 @@ class App extends PureComponent {
             <EventsToolBar />
             <EventsList />
           </Pane>
-          <div style={{ maxWidth: '550px', flex: '0 0 auto' }}>
+          <Pane maxWidth="550px" flex="0 0 auto">
 
-          </div>
+          </Pane>
         </div>
       </Provider>
     );

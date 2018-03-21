@@ -32,8 +32,10 @@
   "scripts": {
     "clean": "rm -rf build",
     "start:dev": "react-scripts start",
-    "prestart": "rm nohup.out",
-    "start": "nohup serve -s build &",
+    "prestart": "rm -f start.pid app.log",
+    "start": "nohup npx serve -s build > app.log 2>&1 & echo $! > start.pid",
+    "stop": "kill -9 $(cat start.pid)",
+    "poststop": "rm -f start.pid",
     "prebuild": "npm run clean",
     "build": "react-scripts build",
     "test": "react-scripts test --env=jsdom",
