@@ -9,6 +9,7 @@ import { listenForEvents, streamEventsBuffer, stopListening } from './actions'
 import Events from './api/events'
 import EventsList from './containers/EventsContainer'
 import EventsToolBar from './containers/EventsToolbarContainer'
+import Notifications from './containers/Notifications'
 import SearchWorker from 'workerize-loader!./search-worker'; // eslint-disable-line import/no-webpack-loader-syntax
 import { Pane } from 'evergreen-ui';
 import { borderColor } from './pallete';
@@ -48,6 +49,7 @@ class App extends PureComponent {
             borderColor={borderColor} borderRight>
             <EventsToolBar />
             <EventsList />
+            <Notifications/>
           </Pane>
           <Pane maxWidth="550px" flex="0 0 auto">
 

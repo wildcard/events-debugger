@@ -19,7 +19,21 @@ import {
   INDEX_EVENTS_BUFFER_FINISHED,
   INDEX_EVENTS_SUBSCRIPTION,
   RENDER_EVENTS_SUBSCRIPTION,
+  NOTIFY_USER,
 } from '../constants/ActionTypes'
+
+import {
+  INIT,
+  START,
+  STOP,
+  FIRST_EVENT,
+  RECEIVING,
+  PAUSED,
+  RESUMED,
+  ERROR,
+  SEARCHING,
+  SEARCH_FILTERD_VIEW,
+} from '../constants/status'
 
 const selectEvent = (state, action) => {
   switch (action.type) {
@@ -52,7 +66,7 @@ const searchInput = (state = '', action) => {
     case SEARCH_EVENTS:
       return action.input;
     default:
-      return state;
+      return state; //
   }
 }
 
@@ -154,27 +168,27 @@ const setStatus = (type) => ({
   timestamp: Date.now()
 });
 
-const status = (state = 'INIT', action) => {
+const status = (state = INIT, action) => {
   switch (action.type) {
     case START_LISTENING_FOR_EVENTS:
-      return setStatus('START');
+      return setStatus(START);
     case STOP_LISTENING_FOR_EVENTS:
-      return setStatus('STOP');
+      return setStatus(STOP);
     case START_RECEIVING_EVENTS:
-      return setStatus('FIRST_EVENT');
+      return setStatus(FIRST_EVENT);
     case RECEIVE_EVENT:
     case RECEIVE_EVENTS:
-      return setStatus('RECEIVING');
+      return setStatus(RECEIVING);
     case PAUSE_EVENTS:
-      return setStatus('PAUSED');
+      return setStatus(PAUSED);
     case RESUME_EVENTS:
-      return setStatus('RESUMED');
+      return setStatus(RESUMED);
     case ERROR_RECEIVING_EVENT:
-      return setStatus('ERROR');
+      return setStatus(ERROR);
     case SEARCH_EVENTS:
-      return setStatus('SEARCHING');
+      return setStatus(SEARCHING);
     case RECEIVED_SEARCH_RESULTS:
-      return setStatus('SEARCH_FILTERD_VIEW');
+      return setStatus(SEARCH_FILTERD_VIEW);
     default:
         return state;
   }
@@ -259,6 +273,20 @@ const subscriptions = (state = {}, action) => {
   }
 }
 
+const statusToNotficationMap = {
+  [ERROR]: 'Error while trying to retireve your events, please refresh to try again',
+};
+
+const notificationMessage = (state = null, action) => {
+  const { type, status } = action;
+  switch (type) {
+    case NOTIFY_USER:
+      return statusToNotficationMap[status.type];
+    default:
+      return null;
+  }
+}
+
 export default combineReducers({
     status,
     list,
@@ -271,6 +299,7 @@ export default combineReducers({
     searchInput,
     search,
     subscriptions,
+    notificationMessage,
   });
 
 export const getEvent = (state, id) => (

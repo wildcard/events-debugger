@@ -12,15 +12,22 @@ export default class Events {
     }
   }
 
+  retry() {
+    this.source = new EventSource(this.url);
+    this._listen();
+  }
+
+  _listen() {
+    this.source.addEventListener('message', this.onMessage, false);
+    this.source.addEventListener('error', this._onError, false);
+    this.source.addEventListener('open', this.onOpen, false);
+  }
+
   listen(onEventReceived, onEventSourceError, onOpen, onComplete) {
     this.onMessage = onEventReceived;
     this.onError = onEventSourceError;
     this.onOpen = onOpen;
     this.onComplete = onComplete;
-
-    this.source.addEventListener('message', this.onMessage, false);
-    this.source.addEventListener('error', this._onError, false);
-    this.source.addEventListener('open', this.onOpen, false);
   }
 
   close () {

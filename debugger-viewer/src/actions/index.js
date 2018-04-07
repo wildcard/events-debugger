@@ -2,15 +2,14 @@ import * as types from '../constants/ActionTypes'
 import { Observable } from 'rxjs/Observable';
 import {
   bufferTime,
-  windowTime,
-  mergeAll,
-  tap,
+  catchError,
 } from 'rxjs/operators';
 import once from 'lodash.once';
 import { filterEvent } from '../reducers/events';
 import parseEventMessageData from '../utils/parse-event-message-data';
 const RECEIVE_EVENTS_RENDER_BUFFER_SIZE = 5;
 const RECEIVE_EVENTS_INDEX_BUFFER_SIZE = 1000;
+const MAX_RETRY_ATTEMPTS = 3;
 
 const receiveEventWhilePaused = (event, searchInput) => ({
   type: types.RECEIVED_PENDING_EVENT,
@@ -98,9 +97,29 @@ export const stopListening = () => (dispatch, getState, { events }) => {
   events.close();
 };
 
-const errorReceivingEvent = () => ({
-  type: types.ERROR_RECEIVING_EVENT
-})
+const errorReceivingEvent = () => (dispatch, getState) => {
+  dispatch({ type: types.ERROR_RECEIVING_EVENT });
+  dispatch(notifyUser());
+
+  const { retryCount } = getState().events;
+  if (retryCount <= MAX_RETRY_ATTEMPTS) {
+    dispatch(retryListenForEvents())
+  }
+}
+
+// surface the `status` from the state to the user
+const notifyUser = () => (dispatch, getState) => {
+  const { status } = getState().events;
+
+  dispatch({
+    type: types.NOTIFY_USER,
+    status
+  })
+}
+
+const retryListenForEvents = () => (dispatch, getState, { events }) => {
+  events.retry();
+}
 
 const indexEvents = (eventMessagesData) => (dispatch, getState, { searchWorker }) => {
   if (!eventMessagesData || !eventMessagesData.length) {
@@ -133,7 +152,7 @@ export const streamEventsBuffer = () => (dispatch, getState, { events }) => {
         ReceivedFirstEvent(dispatch)
       },
       (e) => {
-        observer.error();
+        observer.complete();
         dispatch(errorReceivingEvent());
       },
       () => {
@@ -175,9 +194,7 @@ export const streamEventsBuffer = () => (dispatch, getState, { events }) => {
         return;
       }
 
-      // requestAnimationFrame(time => {
-        dispatch(receiveEvents(eventMessages))
-      // });
+      dispatch(receiveEvents(eventMessages))
     });
 
     dispatch({

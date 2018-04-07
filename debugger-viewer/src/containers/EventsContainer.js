@@ -12,6 +12,7 @@ import NoEvents from '../components/NoEvents';
 import { InfiniteLoader, List, AutoSizer, defaultCellRangeRenderer } from 'react-virtualized';
 import { Overlay, Spinner, InlineAlert, Button, Pane, colors } from 'evergreen-ui';
 import { TOOLBAR_HEIGHT, EVENT_ITEM_HEIGHT } from '../variables';
+import { START, ERROR } from '../constants/status';
 import { backgroundColor } from '../pallete'
 
 const PendingEventsPane = ({ pendingCount, prependPendingEvents }) => (
@@ -91,14 +92,15 @@ class EventsContainer extends PureComponent {
   render() {
     const {
       events,
+      eventsCount,
       status,
       isPaused,
       pendingCount,
       prependPendingEvents,
      } = this.props;
-    const rowCount = events.size;
+    const rowCount = eventsCount;
 
-    if (status.type === 'START') {
+    if ((status.type === START  || status.type === ERROR) && rowCount === 0) {
       return <NoEvents minHeight={window.innerHeight - TOOLBAR_HEIGHT}/>;
     }
 
@@ -128,6 +130,7 @@ class EventsContainer extends PureComponent {
 
 EventsContainer.propTypes = {
   events: PropTypes.instanceOf(Immutable.List).isRequired,
+  eventsCount: PropTypes.number.isRequired,
   isPaused: PropTypes.bool.isRequired,
   pendingCount: PropTypes.number,
   prependPendingEvents: PropTypes.func,
@@ -152,9 +155,22 @@ const getFilteredEvents = createSelector(
     )
   );
 
+const getCount = createSelector([
+  getEventsList,
+  getVisibleEventIds,
+  getSearchInput
+],
+(list, visibleEventIds, searchInput) => (
+  !searchInput ?
+    list.count() :
+    visibleEventIds.length
+  )
+);
+
 const mapStateToProps = state => ({
   pendingCount: state.events.pending.size,
   events: getFilteredEvents(state),
+  eventsCount: getCount(state),
   status: state.events.status,
   isPaused: state.events.isPaused,
 })
